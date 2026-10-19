@@ -94,6 +94,9 @@ val generateAboutVersions by tasks.registering(Exec::class) {
     )
 }
 
+val enableX86 = parseBooleanGradleProperty(providers.gradleProperty("enableX86").orNull)
+val arm64Only = parseBooleanGradleProperty(providers.gradleProperty("arm64Only").orNull)
+
 extensions.configure<com.android.build.api.dsl.ApplicationExtension>("android") {
     namespace = "com.flopster101.siliconplayer"
     compileSdk = 36
@@ -159,9 +162,13 @@ extensions.configure<com.android.build.api.dsl.ApplicationExtension>("android") 
         abi {
             isEnable = true
             reset()
-            include("arm64-v8a", "armeabi-v7a", "x86_64")
-            if (parseBooleanGradleProperty(providers.gradleProperty("enableX86").orNull)) {
-                include("x86")
+            if (arm64Only) {
+                include("arm64-v8a")
+            } else {
+                include("arm64-v8a", "armeabi-v7a", "x86_64")
+                if (parseBooleanGradleProperty(providers.gradleProperty("enableX86").orNull)) {
+                    include("x86")
+                }
             }
             isUniversalApk = false
         }
@@ -380,12 +387,13 @@ fun register16kAlignTaskForVariant(variantName: String) {
 register16kAlignTaskForVariant("debug")
 register16kAlignTaskForVariant("optimizedDebug")
 
-val enableX86 = parseBooleanGradleProperty(providers.gradleProperty("enableX86").orNull)
 val uadeRuntimeAssetAbis = buildList {
     add("arm64-v8a")
-    add("armeabi-v7a")
-    add("x86_64")
-    if (enableX86) add("x86")
+    if (!arm64Only) {
+        add("armeabi-v7a")
+        add("x86_64")
+        if (enableX86) add("x86")
+    }
 }
 val syncUadeRuntimeAssets = tasks.register("syncUadeRuntimeAssets") {
     group = "build setup"

@@ -266,12 +266,14 @@ internal fun SettingsRouteContentHost(
                             state = HomeRouteState(
                                 recentFoldersLimit = state.recentFoldersLimit,
                                 recentFilesLimit = state.recentFilesLimit,
-                                pressBackTwiceToExit = state.pressBackTwiceToExit
+                                pressBackTwiceToExit = state.pressBackTwiceToExit,
+                                startInLibrary = state.startInLibrary
                             ),
                             actions = HomeRouteActions(
                                 onRecentFoldersLimitChanged = actions.onRecentFoldersLimitChanged,
                                 onRecentFilesLimitChanged = actions.onRecentFilesLimitChanged,
-                                onPressBackTwiceToExitChanged = actions.onPressBackTwiceToExitChanged
+                                onPressBackTwiceToExitChanged = actions.onPressBackTwiceToExitChanged,
+                                onStartInLibraryChanged = actions.onStartInLibraryChanged
                             )
                         )
                     }

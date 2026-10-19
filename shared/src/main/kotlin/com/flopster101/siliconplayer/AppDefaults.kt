@@ -3,6 +3,7 @@ package com.flopster101.siliconplayer
 object AppDefaults {
     object Home {
         const val pressBackTwiceToExit = false
+        const val startInLibrary = false
     }
 
     object Browser {

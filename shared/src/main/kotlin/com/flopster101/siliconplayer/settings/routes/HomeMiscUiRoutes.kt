@@ -21,13 +21,15 @@ import androidx.compose.ui.unit.dp
 internal data class HomeRouteState(
     val recentFoldersLimit: Int,
     val recentFilesLimit: Int,
-    val pressBackTwiceToExit: Boolean
+    val pressBackTwiceToExit: Boolean,
+    val startInLibrary: Boolean
 )
 
 internal data class HomeRouteActions(
     val onRecentFoldersLimitChanged: (Int) -> Unit,
     val onRecentFilesLimitChanged: (Int) -> Unit,
-    val onPressBackTwiceToExitChanged: (Boolean) -> Unit
+    val onPressBackTwiceToExitChanged: (Boolean) -> Unit,
+    val onStartInLibraryChanged: (Boolean) -> Unit
 )
 
 internal data class FileBrowserRouteState(
@@ -109,6 +111,13 @@ internal fun HomeRouteContent(
         description = "Require pressing back twice quickly on the Home screen to exit the app.",
         checked = state.pressBackTwiceToExit,
         onCheckedChange = actions.onPressBackTwiceToExitChanged
+    )
+    SettingsRowSpacer()
+    PlayerSettingToggleCard(
+        title = "Open in Library",
+        description = "Start app on Library page",
+        checked = state.startInLibrary,
+        onCheckedChange = actions.onStartInLibraryChanged
     )
 
     if (showFolderLimitDialog) {

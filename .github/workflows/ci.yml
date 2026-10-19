@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build optimizedDebug APK
+    name: Build arm64-v8a APK
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -75,18 +75,6 @@ jobs:
           #!/usr/bin/env bash
           exec "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android26-clang" "$@"
           EOF
-          cat > "${WRAPPER_DIR}/arm-linux-androideabi-gcc" <<'EOF'
-          #!/usr/bin/env bash
-          exec "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi26-clang" "$@"
-          EOF
-          cat > "${WRAPPER_DIR}/x86_64-linux-android-gcc" <<'EOF'
-          #!/usr/bin/env bash
-          exec "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android26-clang" "$@"
-          EOF
-          cat > "${WRAPPER_DIR}/i686-linux-android-gcc" <<'EOF'
-          #!/usr/bin/env bash
-          exec "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android26-clang" "$@"
-          EOF
 
           chmod +x "${WRAPPER_DIR}"/*-linux-android-gcc
           echo "${WRAPPER_DIR}" >> "${GITHUB_PATH}"
@@ -101,7 +89,7 @@ jobs:
           set -euo pipefail
           # silicon_vis is built by the app's CMake, not by the deps scripts.
           EXTERNAL_TREE_HASH="$(git ls-tree -r HEAD -- external | grep -v $'\t'external/silicon/silicon_vis/ | git hash-object --stdin)"
-          echo "key=native-deps-${{ runner.os }}-ndk29-api21-all_legacy-${EXTERNAL_TREE_HASH}" >> "${GITHUB_OUTPUT}"
+          echo "key=native-deps-${{ runner.os }}-ndk29-api21-arm64-v8a-${EXTERNAL_TREE_HASH}" >> "${GITHUB_OUTPUT}"
 
       - name: Restore native deps cache
         id: deps-cache
@@ -114,7 +102,7 @@ jobs:
         if: steps.deps-cache.outputs.cache-hit != 'true'
         run: |
           chmod +x external/build_deps*.sh
-          ./external/build_deps.sh all_legacy all
+          ./external/build_deps.sh arm64-v8a all
 
       - name: Save native deps cache
         if: steps.deps-cache.outputs.cache-hit != 'true'
@@ -124,10 +112,10 @@ jobs:
           path: app/src/main/cpp/prebuilt
           key: ${{ steps.deps-cache-key.outputs.key }}
 
-      - name: Build optimizedDebug APK
+      - name: Build arm64-v8a APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleOptimizedDebug -PenableX86=true --no-daemon --stacktrace
+          ./gradlew assembleOptimizedDebug -Parm64Only=true --no-daemon --stacktrace
 
       - name: Get short commit hash
         id: vars
@@ -143,10 +131,8 @@ jobs:
       - name: Prepare artifacts
         run: |
           mkdir -p artifact
-          find app/build/outputs -type f -name "*.apk" | grep -i optimizeddebug | while read -r APK; do
-            ABI=$(basename "$APK" | sed -n 's/.*app-\(.*\)-optimizedDebug\.apk/\1/p')
-            [ -n "$ABI" ] || continue
-            cp "$APK" "artifact/SiliconPlayer-${{ steps.version.outputs.version_name }}-${{ steps.vars.outputs.short_sha }}-$ABI"
+          find app/build/outputs -type f -name "*arm64-v8a*optimizedDebug*.apk" | while read -r APK; do
+            cp "$APK" "artifact/SiliconPlayer-${{ steps.version.outputs.version_name }}-${{ steps.vars.outputs.short_sha }}-arm64-v8a"
           done
           ls -la artifact/
 
@@ -157,257 +143,9 @@ jobs:
           archive: false
           if-no-files-found: error
 
-      - name: Upload armeabi-v7a artifact
-        uses: actions/upload-artifact@v7
-        with:
-          path: artifact/*armeabi-v7a
-          archive: false
-          if-no-files-found: error
-
-      - name: Upload x86_64 artifact
-        uses: actions/upload-artifact@v7
-        with:
-          path: artifact/*x86_64
-          archive: false
-          if-no-files-found: error
-
-      - name: Upload x86 artifact
-        uses: actions/upload-artifact@v7
-        with:
-          path: artifact/*-x86
-          archive: false
-          if-no-files-found: error
-
-  desktop:
-    name: Build desktop packages
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    env:
-      JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF8
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          submodules: recursive
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Install native build prerequisites
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y autoconf automake libtool pkg-config cmake ninja-build perl
-          sudo apt-get install -y xa65 || sudo apt-get install -y xa
-          sudo apt-get install -y libasound2-dev libpulse-dev libx11-dev libgl1-mesa-dev libvulkan-dev zlib1g-dev
-          sudo apt-get install -y libfuse2 fakeroot
-          command -v xa
-
-      - name: Configure git identity for patch application
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Compute desktop deps cache key
-        id: deps-cache-key
-        shell: bash
-        run: |
-          set -euo pipefail
-          # silicon_vis is built by the app's CMake, not by the deps scripts.
-          EXTERNAL_TREE_HASH="$(git ls-tree -r HEAD -- external | grep -v $'\t'external/silicon/silicon_vis/ | git hash-object --stdin)"
-          echo "key=desktop-deps-${{ runner.os }}-x86_64-${EXTERNAL_TREE_HASH}" >> "${GITHUB_OUTPUT}"
-
-      - name: Restore desktop deps cache
-        id: deps-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: desktop/prebuilt
-          key: ${{ steps.deps-cache-key.outputs.key }}
-
-      - name: Build desktop native dependencies
-        if: steps.deps-cache.outputs.cache-hit != 'true'
-        run: |
-          chmod +x external/build_deps*.sh
-          BUILD_FFMPEG_SOURCE=1 ./external/build_deps_desktop.sh x86_64 all
-
-      - name: Save desktop deps cache
-        if: steps.deps-cache.outputs.cache-hit != 'true'
-        continue-on-error: true
-        uses: actions/cache/save@v4
-        with:
-          path: desktop/prebuilt
-          key: ${{ steps.deps-cache-key.outputs.key }}
-
-      - name: Build release distributable
-        run: |
-          chmod +x gradlew
-          ./gradlew :desktop:createReleaseDistributable --no-daemon --stacktrace
-
-      - name: Package AppImage
-        run: ./desktop/package-appimage.sh
-
-      - name: Package deb and bare tarball
-        run: |
-          ./desktop/package-deb.sh
-          ./desktop/package-tarball.sh
-
-      - name: Get short commit hash
-        id: vars
-        run: echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Get app version
-        id: version
-        run: |
-          VERSION_NAME=$(grep -oP '^siliconplayer\.version=\K.+' gradle.properties)
-          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
-
-      - name: Prepare artifacts
-        run: |
-          mkdir -p artifact
-          SRC=desktop/build/compose/binaries/main-release
-          cp "$SRC"/SiliconPlayer-*.AppImage "artifact/SiliconPlayer-${{ steps.version.outputs.version_name }}-${{ steps.vars.outputs.short_sha }}-x86_64-appimage"
-          cp "$SRC"/SiliconPlayer-*.deb "artifact/SiliconPlayer-${{ steps.version.outputs.version_name }}-${{ steps.vars.outputs.short_sha }}-x86_64-deb"
-          cp "$SRC"/SiliconPlayer-*.tar.gz "artifact/SiliconPlayer-${{ steps.version.outputs.version_name }}-${{ steps.vars.outputs.short_sha }}-x86_64-bare"
-          ls -la artifact/
-
-      - name: Upload AppImage artifact
-        uses: actions/upload-artifact@v7
-        with:
-          path: artifact/SiliconPlayer-*-x86_64-appimage
-          archive: false
-          if-no-files-found: error
-
-      - name: Upload deb artifact
-        uses: actions/upload-artifact@v7
-        with:
-          path: artifact/SiliconPlayer-*-x86_64-deb
-          archive: false
-          if-no-files-found: error
-
-      - name: Upload bare tarball artifact
-        uses: actions/upload-artifact@v7
-        with:
-          path: artifact/SiliconPlayer-*-x86_64-bare
-          archive: false
-          if-no-files-found: error
-
-  arch:
-    name: Build Arch package
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    container:
-      image: archlinux:base-devel
-    env:
-      JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF8
-
-    steps:
-      - name: Restore pacman package cache
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/pacman/pkg
-          key: arch-pacman-pkgs
-          restore-keys: arch-pacman-pkgs
-
-      - name: Install container prerequisites
-        run: |
-          pacman -Syu --noconfirm git sudo
-          useradd -m builder
-          printf 'builder ALL=(ALL) NOPASSWD: ALL\n' > /etc/sudoers.d/builder
-          mkdir -p /home/builder/.gradle
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          submodules: recursive
-
-      - name: Mark workspace as git safe directory
-        run: |
-          # In container jobs the checkout lands owned by the host uid, so
-          # every local git invocation trips over dubious ownership. The
-          # system config covers both root steps and su builder commands.
-          git config --system --add safe.directory "${GITHUB_WORKSPACE}"
-
-      - name: Compute desktop deps cache key
-        id: deps-cache-key
-        shell: bash
-        run: |
-          set -euo pipefail
-          # silicon_vis is built by the app's CMake, not by the deps scripts.
-          EXTERNAL_TREE_HASH="$(git ls-tree -r HEAD -- external | grep -v $'\t'external/silicon/silicon_vis/ | git hash-object --stdin)"
-          echo "key=desktop-deps-${{ runner.os }}-x86_64-${EXTERNAL_TREE_HASH}" >> "${GITHUB_OUTPUT}"
-
-      - name: Restore desktop deps cache
-        id: deps-cache
-        uses: actions/cache/restore@v4
-        with:
-          # Same key as the desktop job: identical script, identical
-          # outputs, so a warm desktop cache skips the dep build here too.
-          # desktop/prebuilt is gitignored, so it is staged into the
-          # makepkg tree by copy below instead of via the git source.
-          path: ${{ github.workspace }}/desktop/prebuilt
-          key: ${{ steps.deps-cache-key.outputs.key }}
-
-      - name: Restore Gradle home cache
-        uses: actions/cache@v4
-        with:
-          path: /home/builder/.gradle
-          key: arch-gradle-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties', '**/*.gradle.kts') }}
-          restore-keys: arch-gradle-
-
-      - name: Fix cache ownership for builder
-        run: |
-          mkdir -p "${GITHUB_WORKSPACE}/desktop/prebuilt"
-          chown -R builder:builder /home/builder/.gradle "${GITHUB_WORKSPACE}/desktop/prebuilt"
-
-      - name: Get short commit hash
-        id: vars
-        run: echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Get app version
-        id: version
-        run: |
-          VERSION_NAME=$(grep -oP '^siliconplayer\.version=\K.+' gradle.properties)
-          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
-
-      - name: Build package
-        run: |
-          set -euo pipefail
-          rm -rf /tmp/archpkg && mkdir -p /tmp/archpkg/src
-          cp -a "${GITHUB_WORKSPACE}" /tmp/archpkg/src/siliconplayer
-          cp desktop/packaging/arch/PKGBUILD desktop/packaging/arch/siliconplayer.sh desktop/packaging/arch/siliconplayer.desktop /tmp/archpkg/
-          chown -R builder:builder /tmp/archpkg
-          su builder -c 'cd /tmp/archpkg && makepkg -se --noconfirm'
-
-      - name: Save desktop deps cache
-        if: steps.deps-cache.outputs.cache-hit != 'true'
-        continue-on-error: true
-        uses: actions/cache/save@v4
-        with:
-          path: ${{ github.workspace }}/desktop/prebuilt
-          key: ${{ steps.deps-cache-key.outputs.key }}
-
-      - name: Prepare artifacts
-        run: |
-          mkdir -p artifact
-          cp /tmp/archpkg/siliconplayer-[0-9]*.pkg.tar.zst "artifact/SiliconPlayer-${{ steps.version.outputs.version_name }}-${{ steps.vars.outputs.short_sha }}-x86_64-pkg"
-
-      - name: Upload Arch package artifact
-        uses: actions/upload-artifact@v7
-        with:
-          path: artifact/SiliconPlayer-*-x86_64-pkg
-          archive: false
-          if-no-files-found: error
-
   publish:
     name: Publish experimental release
-    needs: [build, desktop, arch]
+    needs: [build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
@@ -419,7 +157,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download all build artifacts
+      - name: Download build artifact
         uses: actions/download-artifact@v8
         with:
           merge-multiple: true
@@ -428,14 +166,8 @@ jobs:
       - name: Restore release file names
         run: |
           set -euo pipefail
-          PKGVER=$(grep -oP '^pkgver=\K.+' desktop/packaging/arch/PKGBUILD)
-          PKGREL=$(grep -oP '^pkgrel=\K.+' desktop/packaging/arch/PKGBUILD)
           cd release-artifacts
-          for f in SiliconPlayer-*-x86_64-appimage; do mv "$f" "${f%-x86_64-appimage}-x86_64.AppImage"; done
-          for f in SiliconPlayer-*-x86_64-deb; do mv "$f" "${f%-x86_64-deb}-x86_64.deb"; done
-          for f in SiliconPlayer-*-x86_64-bare; do mv "$f" "${f%-x86_64-bare}-x86_64.tar.gz"; done
-          for f in SiliconPlayer-*-x86_64-pkg; do mv "$f" "siliconplayer-${PKGVER}-${PKGREL}-x86_64.pkg.tar.zst"; done
-          for f in SiliconPlayer-*-arm64-v8a SiliconPlayer-*-armeabi-v7a SiliconPlayer-*-x86_64 SiliconPlayer-*-x86; do mv "$f" "$f.apk"; done
+          for f in SiliconPlayer-*-arm64-v8a; do mv "$f" "$f.apk"; done
           ls -la
 
       - name: Get short commit hash
@@ -476,8 +208,4 @@ jobs:
             --target "$GITHUB_SHA" \
             --title "SiliconPlayer ${VERSION_BASE} (build ${BUILD})" \
             --notes "$NOTES" \
-            release-artifacts/SiliconPlayer-*.apk \
-            release-artifacts/SiliconPlayer-*.AppImage \
-            release-artifacts/SiliconPlayer-*.deb \
-            release-artifacts/SiliconPlayer-*.tar.gz \
-            release-artifacts/siliconplayer-[0-9]*.pkg.tar.zst
+            release-artifacts/SiliconPlayer-*.apk

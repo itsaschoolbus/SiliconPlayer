@@ -417,6 +417,7 @@ internal fun buildMainActivitySettingsScreenActions(
     onRecentFoldersLimitChanged: (Int) -> Unit,
     onRecentFilesLimitChanged: (Int) -> Unit,
     onPressBackTwiceToExitChanged: (Boolean) -> Unit,
+    onStartInLibraryChanged: (Boolean) -> Unit,
     onKeepScreenOnChanged: (Boolean) -> Unit,
     onPlayerArtworkCornerRadiusDpChanged: (Int) -> Unit,
     onShowAudioOutputRouteChipChanged: (Boolean) -> Unit,
@@ -592,6 +593,7 @@ internal fun buildMainActivitySettingsScreenActions(
         onRecentFoldersLimitChanged = { onRecentFoldersLimitChanged(it.coerceIn(1, RECENTS_LIMIT_MAX)) },
         onRecentFilesLimitChanged = { onRecentFilesLimitChanged(it.coerceIn(1, RECENTS_LIMIT_MAX)) },
         onPressBackTwiceToExitChanged = onPressBackTwiceToExitChanged,
+        onStartInLibraryChanged = onStartInLibraryChanged,
         onUrlCacheClearOnLaunchChanged = { enabled ->
             updateUrlCacheClearOnLaunchAction(
                 prefs = prefs,

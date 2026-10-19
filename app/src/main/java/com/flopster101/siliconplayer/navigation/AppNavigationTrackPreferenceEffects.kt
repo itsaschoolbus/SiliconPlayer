@@ -27,6 +27,7 @@ internal fun AppNavigationTrackPreferenceEffects(
     previousRestartsAfterThreshold: Boolean,
     fadePauseResume: Boolean,
     pressBackTwiceToExit: Boolean,
+    startInLibrary: Boolean,
     rememberBrowserLocation: Boolean,
     showParentDirectoryEntry: Boolean,
     showFileIconChipBackground: Boolean,
@@ -166,6 +167,12 @@ internal fun AppNavigationTrackPreferenceEffects(
     LaunchedEffect(pressBackTwiceToExit) {
         prefs.edit()
             .putBoolean(AppPreferenceKeys.PRESS_BACK_TWICE_TO_EXIT, pressBackTwiceToExit)
+            .apply()
+    }
+
+    LaunchedEffect(startInLibrary) {
+        prefs.edit()
+            .putBoolean(AppPreferenceKeys.START_IN_LIBRARY, startInLibrary)
             .apply()
     }
 

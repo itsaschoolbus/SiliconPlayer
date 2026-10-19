@@ -411,6 +411,7 @@ internal fun rememberDesktopSettings(
             recentFoldersLimit = prefs.getInt(AppPreferenceKeys.RECENT_FOLDERS_LIMIT, 10),
             recentFilesLimit = prefs.getInt(AppPreferenceKeys.RECENT_PLAYED_FILES_LIMIT, 20),
             pressBackTwiceToExit = prefs.getBoolean(AppPreferenceKeys.PRESS_BACK_TWICE_TO_EXIT, false),
+            startInLibrary = prefs.getBoolean(AppPreferenceKeys.START_IN_LIBRARY, AppDefaults.Home.startInLibrary),
             urlCacheClearOnLaunch = prefs.getBoolean(AppPreferenceKeys.URL_CACHE_CLEAR_ON_LAUNCH, false),
             urlCacheMaxTracks = prefs.getInt(AppPreferenceKeys.URL_CACHE_MAX_TRACKS, SOURCE_CACHE_MAX_TRACKS_DEFAULT),
             urlCacheMaxBytes = prefs.getLong(AppPreferenceKeys.URL_CACHE_MAX_BYTES, SOURCE_CACHE_MAX_BYTES_DEFAULT),
@@ -792,6 +793,7 @@ internal fun rememberDesktopSettings(
             onRecentFoldersLimitChanged = { putInt(AppPreferenceKeys.RECENT_FOLDERS_LIMIT, it) },
             onRecentFilesLimitChanged = { putInt(AppPreferenceKeys.RECENT_PLAYED_FILES_LIMIT, it) },
             onPressBackTwiceToExitChanged = { putBool(AppPreferenceKeys.PRESS_BACK_TWICE_TO_EXIT, it) },
+            onStartInLibraryChanged = { putBool(AppPreferenceKeys.START_IN_LIBRARY, it) },
             onUrlCacheClearOnLaunchChanged = {
                 putBool(AppPreferenceKeys.URL_CACHE_CLEAR_ON_LAUNCH, it)
                 putBool(AppPreferenceKeys.FILE_CACHE_CLEAR_ON_LAUNCH, it)

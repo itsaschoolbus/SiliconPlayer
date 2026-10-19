@@ -1415,7 +1415,15 @@ private fun AppNavigation(
     var tempIgnoreCoreVolumeForSong by remember { mutableStateOf(false) }
     var tempForceMono by remember { mutableStateOf(false) }
 
-    var currentView by remember { mutableStateOf(MainView.Home) }
+    var currentView by remember {
+        mutableStateOf(
+            if (prefs.getBoolean(AppPreferenceKeys.START_IN_LIBRARY, AppDefaults.Home.startInLibrary)) {
+                MainView.Playlists
+            } else {
+                MainView.Home
+            }
+        )
+    }
     val focusManager = LocalFocusManager.current
     var browserFocusRestoreRequestToken by remember { mutableIntStateOf(0) }
     var showMiniPlayerFocusHighlight by remember { mutableStateOf(false) }
@@ -1514,6 +1522,14 @@ private fun AppNavigation(
             prefs.getBoolean(
                 AppPreferenceKeys.PRESS_BACK_TWICE_TO_EXIT,
                 AppDefaults.Home.pressBackTwiceToExit
+            )
+        )
+    }
+    var startInLibrary by remember {
+        mutableStateOf(
+            prefs.getBoolean(
+                AppPreferenceKeys.START_IN_LIBRARY,
+                AppDefaults.Home.startInLibrary
             )
         )
     }
@@ -2806,6 +2822,7 @@ private fun AppNavigation(
         previousRestartsAfterThreshold = previousRestartsAfterThreshold,
         fadePauseResume = fadePauseResume,
         pressBackTwiceToExit = pressBackTwiceToExit,
+        startInLibrary = startInLibrary,
         rememberBrowserLocation = rememberBrowserLocation,
         showParentDirectoryEntry = showParentDirectoryEntry,
         showFileIconChipBackground = showFileIconChipBackground,
@@ -3678,6 +3695,7 @@ private fun AppNavigation(
         onRecentFoldersLimitChanged = { recentFoldersLimit = it },
         onRecentFilesLimitChanged = { recentFilesLimit = it },
         onPressBackTwiceToExitChanged = { pressBackTwiceToExit = it },
+        onStartInLibraryChanged = { startInLibrary = it },
         onKeepScreenOnChanged = { keepScreenOn = it },
         onPlayerArtworkCornerRadiusDpChanged = { playerArtworkCornerRadiusDp = it },
         onShowAudioOutputRouteChipChanged = { showAudioOutputRouteChip = it },
@@ -3743,6 +3761,7 @@ private fun AppNavigation(
                 recentFoldersLimit = recentFoldersLimit,
                 recentFilesLimit = recentFilesLimit,
                 pressBackTwiceToExit = pressBackTwiceToExit,
+                startInLibrary = startInLibrary,
                 keepScreenOn = keepScreenOn,
                 playerArtworkCornerRadiusDp = playerArtworkCornerRadiusDp,
                 showAudioOutputRouteChip = showAudioOutputRouteChip,

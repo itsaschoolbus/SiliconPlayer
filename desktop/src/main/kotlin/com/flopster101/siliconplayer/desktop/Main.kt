@@ -406,7 +406,15 @@ fun main(args: Array<String>) = application {
     var isApplicationFullscreen by remember(startInFullscreen) { mutableStateOf(startInFullscreen) }
     var restoreMaximizedAfterFullscreen by remember { mutableStateOf(false) }
 
-    var currentView by remember { mutableStateOf(MainView.Home) }
+    var currentView by remember {
+        mutableStateOf(
+            if (desktopPreferences.getBoolean(AppPreferenceKeys.START_IN_LIBRARY, AppDefaults.Home.startInLibrary)) {
+                MainView.Playlists
+            } else {
+                MainView.Home
+            }
+        )
+    }
     var browserRefreshToken by remember { mutableStateOf(0) }
     var isPlayerExpanded by remember { mutableStateOf(false) }
     var isPlayerSurfaceVisible by remember { mutableStateOf(false) }

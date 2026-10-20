@@ -1273,6 +1273,7 @@ private fun AppNavigationBackHandlers(
     showUrlOrPathDialog: Boolean,
     showMiniPlayerFocusHighlight: Boolean,
     pressBackTwiceToExit: Boolean,
+    startInLibrary: Boolean,
     onRestoreMiniPlayerFocusOnCollapseChanged: (Boolean) -> Unit,
     onPlayerExpandedChanged: (Boolean) -> Unit,
     onCollapseDragInProgressChanged: (Boolean) -> Unit,
@@ -1281,6 +1282,8 @@ private fun AppNavigationBackHandlers(
     exitSettingsToReturnView: () -> Unit,
     onCurrentViewChanged: (MainView) -> Unit
 ) {
+    var lastPlaylistsBackPressedAtMs by remember { mutableLongStateOf(0L) }
+
     BackHandler(enabled = isPlayerExpanded || currentView == MainView.Settings) {
         handleAppNavigationBackAction(
             isPlayerExpanded = isPlayerExpanded,
@@ -1305,7 +1308,17 @@ private fun AppNavigationBackHandlers(
         )
     }
     BackHandler(enabled = !isPlayerExpanded && currentView == MainView.Playlists) {
-        onCurrentViewChanged(MainView.Home)
+        if (!startInLibrary) {
+            onCurrentViewChanged(MainView.Home)
+            return@BackHandler
+        }
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastPlaylistsBackPressedAtMs <= HOME_BACK_EXIT_TIMEOUT_MS) {
+            (context as? Activity)?.finish()
+        } else {
+            lastPlaylistsBackPressedAtMs = now
+            Toast.makeText(context, "Press back again to exit app", Toast.LENGTH_SHORT).show()
+        }
     }
     HomeExitBackHandler(
         context = context,
@@ -3103,6 +3116,7 @@ private fun AppNavigation(
         showUrlOrPathDialog = settingsStates.showUrlOrPathDialog.value,
         showMiniPlayerFocusHighlight = showMiniPlayerFocusHighlight,
         pressBackTwiceToExit = pressBackTwiceToExit,
+        startInLibrary = startInLibrary,
         onRestoreMiniPlayerFocusOnCollapseChanged = { restoreMiniPlayerFocusOnCollapse = it },
         onPlayerExpandedChanged = { isPlayerExpanded = it },
         onCollapseDragInProgressChanged = { playerTransition.collapseDragInProgress = it },

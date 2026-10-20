@@ -3925,7 +3925,11 @@ private fun AppNavigation(
                                 (if (currentView == MainView.Settings) settingsReturnView else currentView)
                                     .takeUnless { it == MainView.Settings }
                                     ?: MainView.Home
-                            openSettingsRoute(SettingsRoute.Library, true)
+                            if (startInLibrary) {
+                                openSettingsRoute(SettingsRoute.Root, true)
+                            } else {
+                                openSettingsRoute(SettingsRoute.Library, true)
+                            }
                             currentView = MainView.Settings
                         },
                         context = context,
